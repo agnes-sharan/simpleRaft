@@ -1,8 +1,8 @@
-import zmq
-import threading
+import zmq #ZeroMQ is a high-performance asynchronous messaging library, aimed at use in distributed or concurrent applications. It provides a message queue, but unlike message-oriented middleware, a ZeroMQ system can run without a dedicated message broker. The library's API is designed to resemble that of Berkeley sockets
+import threading #allows to run multiple threads
 
 
-class Server(object):
+class Server(object): #inherits from object class
 
     def __init__(self, name, state, log, messageBoard, neighbors):
         self._name = name
@@ -23,20 +23,20 @@ class Server(object):
         self._state.set_server(self)
         self._messageBoard.set_owner(self)
 
-    def send_message(self, message):
+    def send_message(self, message): #sending messages to all neighbours present
         for n in self._neighbors:
             message._receiver = n._name
             n.post_message(message)
 
-    def send_message_response(self, message):
+    def send_message_response(self, message): #sending response to a messge
         n = [n for n in self._neighbors if n._name == message.receiver]
         if(len(n) > 0):
             n[0].post_message(message)
 
-    def post_message(self, message):
+    def post_message(self, message): #posts the message on the message board
         self._messageBoard.post_message(message)
 
-    def on_message(self, message):
+    def on_message(self, message): #changing the state
         state, response = self._state.on_message(message)
 
         self._state = state
