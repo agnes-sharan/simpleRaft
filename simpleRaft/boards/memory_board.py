@@ -13,7 +13,7 @@ class MemoryBoard(Board):
 
     # This will append the message sent as argument in the function call to 
     # the list dealing with the baord messages. Once the message is appended
-    # it sorts the baord in descending order of timestamp
+    # it sorts the board in descending order of timestamp
     def post_message(self, message):
         self._board.append(message)
 

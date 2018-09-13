@@ -52,6 +52,9 @@ class Leader(State):
 
         return self, None
 
+    # This is a function that ensures communication between leader and the followers 
+    # even when there are no messages to be sent. When the heartbeat isn't sent, it is
+    # assumed the leader has failed and a new election is started.
     def _send_heart_beat(self):
         message = AppendEntriesMessage(
             self._server._name,

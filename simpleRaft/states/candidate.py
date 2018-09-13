@@ -17,6 +17,7 @@ class Candidate(Voter):
         if message.sender not in self._votes:
             self._votes[message.sender] = message
 
+            # If the majority is obtained, make server leader
             if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2):
                 leader = Leader()
                 leader.set_server(self._server)
@@ -24,6 +25,7 @@ class Candidate(Voter):
                 return leader, None
         return self, None
 
+    # Function for candidates to start election
     def _start_election(self):
         self._server._currentTerm += 1
         election = RequestVoteMessage(

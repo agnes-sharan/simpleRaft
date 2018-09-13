@@ -1,11 +1,13 @@
 from .voter import Voter
 
-
+# Inherits class Voter from voter.py
 class Follower(Voter):
 
     def __init__(self, timeout=500):
         Voter.__init__(self)
         self._timeout = timeout
+        # _nextTimeout() can be found in state.py. It randomly sets a timeout
+        # for the server term
         self._timeoutTime = self._nextTimeout()
 
     def on_append_entries(self, message):

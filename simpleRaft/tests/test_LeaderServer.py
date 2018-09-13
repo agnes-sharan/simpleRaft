@@ -13,6 +13,7 @@ class TestLeaderServer( unittest.TestCase ):
 
 	def setUp( self ):
 
+		# Set up follower servers and initialise MemoryBoard for them. 
 		followers = []
 		for i in range( 1, 4 ):
 			board = MemoryBoard()
@@ -24,22 +25,29 @@ class TestLeaderServer( unittest.TestCase ):
 		
 		self.leader = Server( 0, state, [], board, followers )
 
+		# Add leader to the neighbour list of followers
 		for i in followers:
 			i._neighbors.append( self.leader )
 
+
 	def _perform_hearbeat( self ):
 		self.leader._state._send_heart_beat()
+		# Pop last message by decreasing timestamp on followers and invoke
+		# corresponding actions for message on server. Can be found in state.py
 		for i in self.leader._neighbors:
 			i.on_message( i._messageBoard.get_message() )
 
+		# This invokes action for messages on the leader board
 		for i in self.leader._messageBoard._board:
 			self.leader.on_message( i )
 
+	# This is the test to see if the heart beats have reached all the servers
 	def test_leader_server_sends_heartbeat_to_all_neighbors( self ):
 
 		self._perform_hearbeat()
 		self.assertEquals( { 1: 0, 2: 0, 3: 0 }, self.leader._state._nextIndexes ) 
 
+	# This is the test to see if the append entries message is logged correctly
 	def test_leader_server_sends_appendentries_to_all_neighbors_and_is_appended_to_their_logs( self ):
 
 		self._perform_hearbeat()
@@ -58,7 +66,7 @@ class TestLeaderServer( unittest.TestCase ):
 		for i in self.leader._neighbors:
 			self.assertEquals( [{ "term": 1, "value": 100 } ], i._log )
 
-
+	# This is the test to see if the haction invocation on dirtied logs works
 	def test_leader_server_sends_appendentries_to_all_neighbors_but_some_have_dirtied_logs( self ):
 
 		self.leader._neighbors[0]._log.append( { "term": 2, "value": 100 } )

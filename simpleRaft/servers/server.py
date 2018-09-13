@@ -1,6 +1,9 @@
+# ZeroMQ - This is a asynchromnous messaging library in python usually used in
+# distributed systems. More details will be put up when functions are used. 
 import zmq
 import threading
 
+# Two classes have been defined in this code : Server and ZeroMQ
 
 class Server(object):
 
@@ -23,16 +26,20 @@ class Server(object):
         self._state.set_server(self)
         self._messageBoard.set_owner(self)
 
+    # This function gets the names of all the neighbours for the server 
+    # and post message to their respective message boards
     def send_message(self, message):
         for n in self._neighbors:
             message._receiver = n._name
             n.post_message(message)
 
+    # Send response to message
     def send_message_response(self, message):
         n = [n for n in self._neighbors if n._name == message.receiver]
         if(len(n) > 0):
             n[0].post_message(message)
 
+    # This is the actual message that posts the message on the board
     def post_message(self, message):
         self._messageBoard.post_message(message)
 

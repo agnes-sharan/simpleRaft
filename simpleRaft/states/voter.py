@@ -9,6 +9,8 @@ class Voter(State):
         self._last_vote = None
 
     def on_vote_request(self, message):
+        # If message is more recent that the server's last Log, set the 
+        # sender as voter
         if(self._last_vote is None and
            message.data["lastLogIndex"] >= self._server._lastLogIndex):
             self._last_vote = message.sender

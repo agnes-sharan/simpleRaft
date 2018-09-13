@@ -10,19 +10,23 @@ from ..states.leader import Leader
 
 class TestCandidateServer( unittest.TestCase ):
 
+	# This is to initialise a candidate (1) and follower server (0)
 	def setUp( self ):
 		board = MemoryBoard()
 		state = Follower()
 		self.oserver = Server( 0, state, [], board, [] )
 
+		# Initialise candidate also call start_election() in _init_
 		board = MemoryBoard()
 		state = Candidate()
 		self.server = Server( 1, state, [], board, [ self.oserver ] )
 
+		# Add candidate server to follower server neighbour
 		self.oserver._neighbors.append( self.server )
 
 	def test_candidate_server_had_intiated_the_election( self ):
-
+		# Ensure that the candidate server posts a message that will have a true
+		# response value for the message posted and initiates an election
 		self.assertEquals( 1, len( self.oserver._messageBoard._board ) )
 
 		self.oserver.on_message( self.oserver._messageBoard.get_message() )
@@ -36,6 +40,11 @@ class TestCandidateServer( unittest.TestCase ):
 		self.assertEquals( 1, len( self.server._messageBoard._board ) )
 		self.assertEquals( True, self.server._messageBoard.get_message().data["response"] )
 
+	# This function tests the winning of a candidate by initialising two 
+	# follower servers and one candidate server, posting vote request messages 
+	# in both and getting the response message. After it check for the condition
+	# of majority for the server and concludes whether server state has changed
+	# to leader.
 	def test_candidate_server_wins_election( self ):
 		board = MemoryBoard()
 		state = Follower()
@@ -62,6 +71,9 @@ class TestCandidateServer( unittest.TestCase ):
 
 		self.assertEquals( type( server._state ), Leader )
 
+	# This fucniton tests the tiw between two candidates servers with 4 follower
+	# servers, 2 candidates and each requesting two of the followers for votes. 
+	# It then asserts that the two candidates remain in state cnadidate.
 	def test_two_candidates_tie( self ):
 		followers = []
 
@@ -96,6 +108,10 @@ class TestCandidateServer( unittest.TestCase ):
 		self.assertEquals( type( c0._state ), Candidate )
 		self.assertEquals( type( c1._state ), Candidate )
 
+	# This tests the case of two candidate servers wherein one wins by majority.
+	# There are 6 followers servers and 2 candidates, the first gets 2 votes
+	# the second gets 4 votes. It hten asserts that the first is in candidate 
+	# state and the second is in Leader state.
 	def test_two_candidates_one_wins( self ):
 		followers = []
 
