@@ -49,28 +49,28 @@ class ZeroMQServer(Server):
 
         class SubscribeThread(threading.Thread):
             def run(thread):
-                context = zmq.Context()
-                socket = context.socket(zmq.SUB)
+                context = zmq.Context() #fetching the context
+                socket = context.socket(zmq.SUB) # SUB = subscribe
                 for n in neighbors:
-                    socket.connect("tcp://%s:%d" % (n._name, n._port))
+                    socket.connect("tcp://%s:%d" % (n._name, n._port)) #conneting with all the neighbour using port 6666
 
-                while True:
+                while True: # receiving requests from clients
                     message = socket.recv()
                     self.on_message(message)
 
         class PublishThread(threading.Thread):
             def run(thread):
                 context = zmq.Context()
-                socket = context.socket(zmq.PUB)
-                socket.bind("tcp://*:%d" % self._port)
+                socket = context.socket(zmq.PUB) #PUB - publisher
+                socket.bind("tcp://*:%d" % self._port) #port binding
 
                 while True:
-                    message = self._messageBoard.get_message()
+                    message = self._messageBoard.get_message() 
                     if not message:
                         continue # sleep wait?
-                    socket.send(message)
+                    socket.send(message) #sending message to neighbours
 
-        self.subscribeThread = SubscribeThread()
+        self.subscribeThread = SubscribeThread() 
         self.publishThread = PublishThread()
 
         self.subscribeThread.daemon = True
