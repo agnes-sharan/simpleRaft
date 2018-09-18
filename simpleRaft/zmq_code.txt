@@ -1,0 +1,21 @@
+Installing zmq
+$ pip install pyzmq-static
+
+** Important
+-> Context
+Before using any zmq library function, it is important to initialize a context
+context are thread safes
+
+example
+
+import zmq
+context = zmq.Context()
+
+
+-> Sockets
+
+sockets are created from intialized context
+
+example 
+
+socket = context.socket(zmq.REP) where zmq.REP is the type of socket
