@@ -5,6 +5,7 @@ $ pip install pyzmq-static
 -> Context
 Before using any zmq library function, it is important to initialize a context
 context are thread safes
+an application can have more than one context
 
 example
 
@@ -18,4 +19,24 @@ sockets are created from intialized context
 
 example 
 
-socket = context.socket(zmq.REP) where zmq.REP is the type of socket
+socket = context.socket(zmq.REP) where zmq.REP is the type of socket which has to be passed during creation
+
+
+
+-> Messaging patterns
+
+Conventional sockets allow
+1) one to one
+2) many to one
+3) one to many
+
+paired sockets allow the following
+1) bidirectional communication
+2) only one connected peer
+3) no specific state in the socket
+4) server listens to one port and clients connects to it
+
+examples in example folder
+
+
+
