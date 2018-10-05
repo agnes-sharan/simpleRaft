@@ -39,4 +39,15 @@ paired sockets allow the following
 examples in example folder
 
 
+Clien/Server
+
+zmq.req can connect to many servers
+requests will be distributed to all the servers
+
+1) zmq.REQ  (the request type) will block on send unless it has received a reply
+2) zmq.REP (The reply ) will block on send until it receives a request
+
+
+
+
 
