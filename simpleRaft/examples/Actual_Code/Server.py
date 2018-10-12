@@ -36,8 +36,8 @@ class ZMQserver(Server):
 		self.timer.daemon = True
      	        self.timer.start()
                 while True: 
-		    self.timer._stop()
 		    message = socket.recv()
+     		    self.timer._stop()
                     #action on message
 		    self.timer.daemon = True
 		    self.timer.start()  	
