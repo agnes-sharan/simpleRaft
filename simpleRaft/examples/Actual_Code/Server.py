@@ -17,8 +17,8 @@ class ZMQserver(Server):
 		super(ZeroMQServer, self).__init__(name, state, neighbors)
 	        self._port = 6666	
 
-	class StartTimer(threading.Thread)
-	     def start(thread)
+	class StartTimer(threading.Thread):
+	     def start(thread):
 		rand = random.randint(150,301)
 		while True:
 		    timer.sleep(rand/100)   
