@@ -2,47 +2,46 @@ import zmq
 import threading
 import random
 
-
 class Server(object):
-	
+
 	def __init__(self,name,state,neighbours):
 		self._name = name
-	        self._state = state
+	    self._state = state
 		self._neighbors = neighbors
-
-	
 
 class ZMQserver(Server):
 	def __init__(self,name,state,neighbours,port=6666):
 		super(ZeroMQServer, self).__init__(name, state, neighbors)
-	        self._port = 6666	
+	        self._port = 6666
 
 	class StartTimer(threading.Thread):
+		## The function must be run().See the annotated code for explanation
 	     def start(thread):
 		rand = random.randint(150,301)
 		while True:
-		    timer.sleep(rand/100)   
+			## 1 sec =  1000 msec
+		    timer.sleep(rand/100)
 		    # start election
 		    break
 
 	class SubscribeThread(threading.Thread):
             def run(thread):
-                context = zmq.Context() 
+                context = zmq.Context()
                 socket = context.socket(zmq.SUB)
                 for n in neighbors:
-                    socket.connect("tcp://%s:%d" % (n._name, n._port)) 
+                    socket.connect("tcp://%s:%d" % (n._name, n._port))
 		
 		self.timer = Timer()
 		self.timer.daemon = True
      	        self.timer.start()
-                while True: 
+                while True:
 		    message = socket.recv()
      		    self.timer._stop()
                     #action on message
 		    self.timer.daemon = True
-		    self.timer.start()  	
-                    
-			
+		    self.timer.start()
+
+
         class PublishThread(threading.Thread):
             def run(thread):
                 context = zmq.Context()
@@ -52,15 +51,14 @@ class ZMQserver(Server):
                 while True:
                     #send heartbeat
                     if not message:
-                        continue 
+                        continue
                     socket.send(message)
- 
-        self.subscribeThread = SubscribeThread() 
+
+        self.subscribeThread = SubscribeThread()
         self.publishThread = PublishThread()
-	
+
 
         self.subscribeThread.daemon = True
         self.subscribeThread.start()
         self.publishThread.daemon = True
         self.publishThread.start()
-	
