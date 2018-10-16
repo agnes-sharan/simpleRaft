@@ -3,6 +3,7 @@ from .voter import Voter
 class Follower(Voter):
 
     def __init__(self, timeout=500):
+        # The moment you become a follower, you become a voter
         Voter.__init__(self)
         self._timeout = timeout
         self._timeoutTime = self._nextTimeout()
