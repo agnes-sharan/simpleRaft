@@ -2,7 +2,6 @@ import time
 # class for the Base Message
 
 class BaseMessage(object):
-    AppendEntries = 0
     RequestVote = 1
     RequestVoteResponse = 2
     Response = 3
@@ -15,7 +14,7 @@ class BaseMessage(object):
         self._data = data
         self._term = term
 
-    @property #Python @property is one of the built-in decorators. The main purpose of any decorator is to change your class methods or attributes in such a way so that the user of your class no need to make any change in their code
+    @property 
     def receiver(self):
         return self._receiver
 
