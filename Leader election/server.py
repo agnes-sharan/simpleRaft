@@ -46,7 +46,7 @@ class Client(object):
 					print "client running"
 					time.sleep(10)
 					while True:
-						time.sleep(5)
+						time.sleep(10)
 						context = zmq.Context()
 						socket = context.socket(zmq.PUB)
 						socket.bind("tcp://*:%d" % self.port)
@@ -59,34 +59,40 @@ class Client(object):
 		print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!      MESSAGE SENT          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1"
 		if self.leader_port == 5551:
 			#server1.messageBoard.append(message)
-			server1.log.append(message.data["entries"])
-			server1.logIndex += 1
+			server1.requests.append(message.data["entries"])
+			server1.requestcount += 1
+			server1.requestmsg = True
 			print "Message Stored in %d server" % (self.leader_port)
-			print "Message board : %s " % (server1.messageBoard) 
+
 		elif self.leader_port == 5552:
 			#server2.messageBoard.append(message)
-			server2.log.append(message.data["entries"])
-			server2.logIndex += 1
+			server2.requests.append(message.data["entries"])
+			server2.requestcount += 1
+			server2.requestmsg = True
 			print "Message Stored in %d server" % (self.leader_port)
-			print "Message board : %s " % (server2.messageBoard)
+
 		elif self.leader_port == 5553:
 			#server3.messageBoard.append(message)
-			server3.log.append(message.data["entries"])
-			server3.logIndex += 1
+			server3.requests.append(message.data["entries"])
+			server3.requestcount += 1
+			server3.requestmsg = True
 			print "Message Stored in %d server" % (self.leader_port)
-			print "Message board : %s " % (server3.messageBoard)
+
 		elif self.leader_port == 5554:
 			#server4.messageBoard.append(message)
-			server4.log.append(message.data["entries"])
-			server4.logIndex += 1
+			server4.requests.append(message.data["entries"])
+			server4.requestcount += 1
+			server4.requestmsg = True
 			print "Message Stored in %d server" % (self.leader_port)
-			print "Message board : %s " % (server4.messageBoard)
+
 		elif self.leader_port == 5555:
 			#server5.messageBoard.append(message)
-			server5.log.append(message.data["entries"])
-			server5.logIndex += 1
+			server5.requests.append(message.data["entries"])
+			server5.requestcount += 1
+			server5.requestmsg = True
 			print "Message Stored in %d server" % (self.leader_port)
-			print "Message board : %s " % (server5.messageBoard)
+
+	
 
 	def send_log(self):
 		#for i in range(len(servers)):
@@ -94,7 +100,7 @@ class Client(object):
 			#	server = servers[i]
 		print "Client Sent Message %d to Leader %d " % (self.x,self.leader_port)
 		log_message = Message(
-			"RQ",
+			"AE",
 			self.port,
 			self.leader_port,
 			self.currentterm,
@@ -124,6 +130,9 @@ class Server(object):
 		self.logIndex = 0
 		self.commits = []
 		self.commitcount = {}
+		self.requests = []
+		self.requestmsg = False
+		self.requestcount = -1
 
 		self.lastLogIndex = 0
 		self.lastLogTerm = None
@@ -137,7 +146,8 @@ class Server(object):
 
 	def post_message(self, message):
 		self.messageBoard.append(message)
-	
+		#print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& committed on followers &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" 
+		
 
 	def send_heartbeat(self):
 		heartbeat = Message(
@@ -155,7 +165,8 @@ class Server(object):
 
 		self.post_message(heartbeat)
 	
-	def send_log(self,Value):
+	def send_log(self,Value,neighbors):
+		self.neighbors = neighbors
 		print "############################################ SEND LOG FUNCTION value %d #########################################" % (Value)
 		log_entries = Message(
 			"AE",
@@ -169,7 +180,9 @@ class Server(object):
 				"entries": Value,
 				"leaderCommit": self.commitIndex
 			})
-
+		for n in neighbors:
+			n.logIndex += 1
+			n.lastLogIndex += 1
 		self.post_message(log_entries)
 
 	def start_election(self):
@@ -284,10 +297,11 @@ class Server(object):
 
 
 
-	def onrequestreceived(self,index):
+	def onrequestreceived(self,index,neighbors):
+		self.neighbors = neighbors
 		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@              WORKING        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 		print "Value to be appended is %d " % (self.log[index-1]) 
-		self.send_log(self.log[index-1])
+		self.send_log(self.log[index-1],self.neighbors)
 		
 
 	def SetUpThreads(self, neighbors):
@@ -305,9 +319,12 @@ class Server(object):
 
 				while True:
 					if self.state == LEADER:
-						if self.lastLogIndex + 1 == self.logIndex:
-							self.lastLogIndex += 1
-							self.onrequestreceived(self.logIndex)
+						if self.requestmsg== True:
+							self.logIndex += 1
+							self.log.append(self.requests[self.requestcount])
+							print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Committed on leader $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+							self.requestmsg = False
+							self.onrequestreceived(self.logIndex,self.neighbors)
 					message = socket.recv_pyobj()
 					if message.receiver == self.port or message.receiver is None:
 						
@@ -344,7 +361,7 @@ class Server(object):
 				while True:
 					while self.state != LEADER:
 						self.time_started = time.time()
-						self.timeout = random.randint(3,5)
+						self.timeout = random.randint(7,10)
 						self.restart_timer = False
 
 						while self.restart_timer == False and self.state != LEADER:
@@ -371,8 +388,8 @@ class Server(object):
 								message.Print(self.port)
 								self.on_message(message)'''
 	
-						if y == 10:
-							print " Time Stamp : %s || Server Crashed %d inside function" % (datetime.now(),self.port)
+						#if y == 100:
+							#print " Time Stamp : %s || Server Crashed %d inside function" % (datetime.now(),self.port)
 							#e = threading.Event()
 							#e.wait(timeout=10)
 							#print "1) Client context destroyed : %s\n" % (client_context.closed)
@@ -380,7 +397,7 @@ class Server(object):
 							#client_context.term()
 #								break
 							#print "2) Client context destroyed : %s\n" % (client_context.closed)
-						y=y+1
+						#y=y+1
 						
 
 		self.subscribeThread = SubscribeThread()
