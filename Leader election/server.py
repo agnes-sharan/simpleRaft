@@ -61,31 +61,31 @@ class Client(object):
 			server1.requests.append(message.data["entries"])
 			server1.requestcount += 1
 			server1.requestmsg = True
-			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
+			print "%-15s | RQ | None | client | %s \n" %(str(datetime.now())[11:], self.leader_port),
 
 		elif self.leader_port == 5552:
 			server2.requests.append(message.data["entries"])
 			server2.requestcount += 1
 			server2.requestmsg = True
-			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
+			print "%-15s | RQ | None | client | %s \n" %(str(datetime.now())[11:], self.leader_port),
 
 		elif self.leader_port == 5553:
 			server3.requests.append(message.data["entries"])
 			server3.requestcount += 1
 			server3.requestmsg = True
-			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
+			print "%-15s | RQ | None | client | %s \n" %(str(datetime.now())[11:], self.leader_port),
 
 		elif self.leader_port == 5554:
 			server4.requests.append(message.data["entries"])
 			server4.requestcount += 1
 			server4.requestmsg = True
-			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
+			print "%-15s | RQ | None | client | %s \n" %(str(datetime.now())[11:], self.leader_port),
 
 		elif self.leader_port == 5555:
 			server5.requests.append(message.data["entries"])
 			server5.requestcount += 1
 			server5.requestmsg = True
-			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)	
+			print "%-15s | RQ | None | client | %s \n" %(str(datetime.now())[11:], self.leader_port),	
 
 	
 
@@ -156,7 +156,7 @@ class Server(object):
 	
 	def send_log(self,Value,neighbors):
 		self.neighbors = neighbors
-		print "%-15s :  Logs Committed into the followers" % (str(datetime.now())[11:])
+		print "\n[%-15s :  Logs Committed into the followers ]\n\n" % (str(datetime.now())[11:])
 		log_entries = Message(
 			"AE",
 			self.port,
@@ -171,7 +171,7 @@ class Server(object):
 				"lastLogIndex": self.logIndex-2,
 				"leaderCommit": self.commitIndex
 			})
-		print "Logs"
+		print "\nLogs"
 		print "Leader"
 		print "Server: %s , Log : %s " % (self.port,self.log)
 		print "Followers" 
@@ -179,6 +179,7 @@ class Server(object):
 			n.logIndex += 1
 			n.lastLogIndex += 1
 			print "Server: %s , Log : %s " % (n.port,n.log)
+		print "\n\n"
 		self.post_message(log_entries)
 
 	def start_election(self):
@@ -338,14 +339,15 @@ class Server(object):
 						if self.requestmsg== True:
 							self.logIndex += 1
 							self.log.append(self.requests[self.requestcount])
-							print "%-15s : Requested committed onto the leader" % (str(datetime.now())[11:])
-							print "Logs"
+							print "\n[%-15s : Requested committed onto the leader]\n\n" % (str(datetime.now())[11:])
+							print "\nLogs"
 							print "Leader"
 							print "Server: %s , Log : %s " % (self.port,self.log)
 							print "Followers"
 							for n in neighbors:
 								print "Server: %s , Log : %s " % (n.port,n.log)
 							self.requestmsg = False
+							print "\n\n"
 							self.onrequestreceived(self.logIndex,self.neighbors)
 					message = socket.recv_pyobj()
 					if message.receiver == self.port or message.receiver is None:
@@ -353,16 +355,6 @@ class Server(object):
 						message.Print(self.port)
 						self.on_message(message, neighbors)
 
-			
-		
-			
-
-		'''class PrintLog(threading.Thread):
-			
-			def run(thread):
-				while True:
-					time.sleep(3)
-					print "Server: %s , Log : %s " % (self.port,self.log)'''
 
 
 		class PublishThread(threading.Thread):
@@ -392,21 +384,21 @@ class Server(object):
 
 						while self.restart_timer == False and self.state != LEADER:
 							if time.time() > self.time_started + self.timeout:
-								print "\n[%s: server %d experienced timeout]\n\n" % (str(datetime.now())[11:],self.port),
+								print "\n[%s: server %d experienced timeout]\n\n" % (str(datetime.now())[11:],self.port)
 
 								self.state = CANDIDATE
 								self.votes = {}
 								self.start_election()
 								self.restart_timer = True
 						if y == 10:
-							print " Time Stamp : %s || Server Crashed %d " % (datetime.now(),self.port)
+							print "\n[ %s || Server %d Crashed ]\n\n" % (str(datetime.now())[11:],self.port)
 							e = threading.Event()
 							e.wait(timeout=10)
 						y=y+1
 						
 					while self.state == LEADER:
 						if y == 10:
-							print " Time Stamp : %s || Server Crashed %d inside function" % (datetime.now(),self.port)
+							print "\n[ %s || Server %d Crashed ]\n\n" % (str(datetime.now())[11:],self.port)
 							e = threading.Event()
 							e.wait(timeout=10)
 						y=y+1
