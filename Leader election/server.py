@@ -43,7 +43,6 @@ class Client(object):
 	        class Client_thread(threading.Thread):
 
 			def run(thread):
-					print "client running"
 					time.sleep(10)
 					while True:
 						time.sleep(10)
@@ -56,49 +55,41 @@ class Client(object):
 
 	def post_message(self, message):
 		
-		print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!      MESSAGE SENT          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1"
+ 
+		
 		if self.leader_port == 5551:
-			#server1.messageBoard.append(message)
 			server1.requests.append(message.data["entries"])
 			server1.requestcount += 1
 			server1.requestmsg = True
-			print "Message Stored in %d server" % (self.leader_port)
+			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
 
 		elif self.leader_port == 5552:
-			#server2.messageBoard.append(message)
 			server2.requests.append(message.data["entries"])
 			server2.requestcount += 1
 			server2.requestmsg = True
-			print "Message Stored in %d server" % (self.leader_port)
+			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
 
 		elif self.leader_port == 5553:
-			#server3.messageBoard.append(message)
 			server3.requests.append(message.data["entries"])
 			server3.requestcount += 1
 			server3.requestmsg = True
-			print "Message Stored in %d server" % (self.leader_port)
+			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
 
 		elif self.leader_port == 5554:
-			#server4.messageBoard.append(message)
 			server4.requests.append(message.data["entries"])
 			server4.requestcount += 1
 			server4.requestmsg = True
-			print "Message Stored in %d server" % (self.leader_port)
+			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)
 
 		elif self.leader_port == 5555:
-			#server5.messageBoard.append(message)
 			server5.requests.append(message.data["entries"])
 			server5.requestcount += 1
 			server5.requestmsg = True
-			print "Message Stored in %d server" % (self.leader_port)
+			print "%-15s : Message Sent from client to Server %s" % (str(datetime.now())[11:] , self.leader_port)	
 
 	
 
 	def send_log(self):
-		#for i in range(len(servers)):
-			#if servers[i].port == self.leader_port:
-			#	server = servers[i]
-		print "Client Sent Message %d to Leader %d " % (self.x,self.leader_port)
 		log_message = Message(
 			"AE",
 			self.port,
@@ -124,8 +115,6 @@ class Server(object):
 		self.commitIndex = 0
 		self.currentTerm = 0
 
-
-		# change
 		self.log = []
 		self.logIndex = 0
 		self.commits = []
@@ -146,7 +135,7 @@ class Server(object):
 
 	def post_message(self, message):
 		self.messageBoard.append(message)
-		#print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& committed on followers &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" 
+
 		
 
 	def send_heartbeat(self):
@@ -167,7 +156,7 @@ class Server(object):
 	
 	def send_log(self,Value,neighbors):
 		self.neighbors = neighbors
-		print "############################################ SEND LOG FUNCTION value %d #########################################" % (Value)
+		print "%-15s :  Logs Committed into the followers" % (str(datetime.now())[11:])
 		log_entries = Message(
 			"AE",
 			self.port,
@@ -178,11 +167,18 @@ class Server(object):
 				"prevLogIndex": self.lastLogIndex,
 				"prevLogTerm": self.lastLogTerm,
 				"entries": Value,
+				"lastentry": self.log[self.logIndex-2],
+				"lastLogIndex": self.logIndex-2,
 				"leaderCommit": self.commitIndex
 			})
+		print "Logs"
+		print "Leader"
+		print "Server: %s , Log : %s " % (self.port,self.log)
+		print "Followers" 
 		for n in neighbors:
 			n.logIndex += 1
 			n.lastLogIndex += 1
+			print "Server: %s , Log : %s " % (n.port,n.log)
 		self.post_message(log_entries)
 
 	def start_election(self):
@@ -203,7 +199,7 @@ class Server(object):
 
 		self.post_message(RequestVote)
 
-	def on_append_entries(self, message):
+	def on_append_entries(self, message, neighbors):
 		if message.term < self.currentTerm:
 			self.send_append_entries_response(message, response = False)
 
@@ -211,7 +207,17 @@ class Server(object):
 			self.state = FOLLOWER
 			self.restart_timer = True
 		else:
-			self.log.append(message.data["entries"])
+			if message.data["lastLogIndex"] >= 0:
+				if self.logIndex-2 == message.data["lastLogIndex"]:
+					if self.log[self.logIndex-2] == message.data["lastentry"]:
+						self.log.append(message.data["entries"])
+					else:
+						self.replicate_log(neighbors)
+				else:
+					self.replicate_log(neighbors)
+			else:
+				self.log.append(message.data["entries"])
+				
 
 			
 
@@ -276,10 +282,9 @@ class Server(object):
 
 	def log_append(self,message):
 		self.log.append(message.data["entries"])
-		#self.log[len(self.log)-1]=message.data["entries"]
 		print "Loh size : %d\n" % (len(self.log))
 
-	def on_message(self, message):
+	def on_message(self, message, neighbors):
 
 		if message.term > self.currentTerm:
 			self.currentTerm = message.term
@@ -287,7 +292,7 @@ class Server(object):
 			self.lastVote = None
 
 		if message.type == "AE":
-			self.on_append_entries(message)
+			self.on_append_entries(message, neighbors)
 		elif message.type == "RV":
 			self.on_vote_request(message)
 		elif message.type == "RV-R":
@@ -296,13 +301,24 @@ class Server(object):
 			self.on_append_entries_response(message)
 
 
-
 	def onrequestreceived(self,index,neighbors):
 		self.neighbors = neighbors
-		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@              WORKING        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-		print "Value to be appended is %d " % (self.log[index-1]) 
 		self.send_log(self.log[index-1],self.neighbors)
 		
+	def replicate_log(self, neighbors):
+		self.neighbors = neighbors
+		for n in neighbors:
+			nextIndex =  self.lastLogIndex if n.lastLogIndex > self.lastLogIndex else n.lastLogIndex
+			while nextIndex > -1 and n.log[nextIndex] != self.log[nextIndex]:
+				nextIndex -= 1
+			nextIndex += 1
+			n.log[nextIndex:]=[]
+			print n.port
+			i = nextIndex-1
+			while i < self.lastLogIndex :
+				i += 1
+				n.log.append(self.log[i])
+
 
 	def SetUpThreads(self, neighbors):
 		self.neighbors = neighbors
@@ -322,21 +338,31 @@ class Server(object):
 						if self.requestmsg== True:
 							self.logIndex += 1
 							self.log.append(self.requests[self.requestcount])
-							print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Committed on leader $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+							print "%-15s : Requested committed onto the leader" % (str(datetime.now())[11:])
+							print "Logs"
+							print "Leader"
+							print "Server: %s , Log : %s " % (self.port,self.log)
+							print "Followers"
+							for n in neighbors:
+								print "Server: %s , Log : %s " % (n.port,n.log)
 							self.requestmsg = False
 							self.onrequestreceived(self.logIndex,self.neighbors)
 					message = socket.recv_pyobj()
 					if message.receiver == self.port or message.receiver is None:
 						
 						message.Print(self.port)
-						self.on_message(message)
+						self.on_message(message, neighbors)
 
-		class PrintLog(threading.Thread):
+			
+		
+			
+
+		'''class PrintLog(threading.Thread):
 			
 			def run(thread):
 				while True:
 					time.sleep(3)
-					print "Server: %s , Log : %s " % (self.port,self.log)
+					print "Server: %s , Log : %s " % (self.port,self.log)'''
 
 
 		class PublishThread(threading.Thread):
@@ -361,7 +387,7 @@ class Server(object):
 				while True:
 					while self.state != LEADER:
 						self.time_started = time.time()
-						self.timeout = random.randint(7,10)
+						self.timeout = random.randint(15,20)
 						self.restart_timer = False
 
 						while self.restart_timer == False and self.state != LEADER:
@@ -372,43 +398,27 @@ class Server(object):
 								self.votes = {}
 								self.start_election()
 								self.restart_timer = True
+						if y == 10:
+							print " Time Stamp : %s || Server Crashed %d " % (datetime.now(),self.port)
+							e = threading.Event()
+							e.wait(timeout=10)
+						y=y+1
+						
 					while self.state == LEADER:
-						'''client_context = zmq.Context()
-						client_socket = client_context.socket(zmq.SUB)
-						client_socket.connect("tcp://localhost:%d" % 5556)
-						client_socket.setsockopt(zmq.SUBSCRIBE, "")'''
-						#message = client_socket.recv_pyobj()
-						#print "message receiver : %s" % (message.receiver)
-						'''while True:
-							message = client_socket.recv_pyobj()
-
-							if message.receiver == self.port or message.receiver is None:
-								if message.type == "RQ":
-									print "client message received %s" % (message.receiver)
-								message.Print(self.port)
-								self.on_message(message)'''
-	
-						#if y == 100:
-							#print " Time Stamp : %s || Server Crashed %d inside function" % (datetime.now(),self.port)
-							#e = threading.Event()
-							#e.wait(timeout=10)
-							#print "1) Client context destroyed : %s\n" % (client_context.closed)
-							#client_socket.close()
-							#client_context.term()
-#								break
-							#print "2) Client context destroyed : %s\n" % (client_context.closed)
-						#y=y+1
+						if y == 10:
+							print " Time Stamp : %s || Server Crashed %d inside function" % (datetime.now(),self.port)
+							e = threading.Event()
+							e.wait(timeout=10)
+						y=y+1
 						
 
 		self.subscribeThread = SubscribeThread()
 		self.publishThread = PublishThread()
 		self.timeThread = StartTimer()
-		self.printlog = PrintLog()
 
 		self.subscribeThread.start()
 		self.publishThread.start()
 		self.timeThread.start()
-		self.printlog.start()
 
 signal.signal(signal.SIGINT, signal.SIG_DFL);
 
@@ -435,5 +445,3 @@ server3.SetUpThreads([server1, server2, server4, server5])
 server4.SetUpThreads([server1, server2, server3, server5])
 server5.SetUpThreads([server1, server2, server3, server4])
 
-#time.sleep(10)
-#client.post_message("Hi")
